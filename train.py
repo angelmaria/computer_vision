@@ -1,3 +1,4 @@
+# training.py
 from ultralytics import YOLO
 import os
 from pathlib import Path
