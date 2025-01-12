@@ -9,8 +9,8 @@ import shutil
 class ImageCollector:
     def __init__(self, project_dir: str):
         self.project_dir = Path(project_dir)
-        self.images_dir = self.project_dir / "dataset" / "images"
-        self.raw_downloads_dir = self.project_dir / "downloads"
+        self.images_dir = self.project_dir / "data" / "images"
+        self.raw_downloads_dir = self.project_dir / "temp_downloads"
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 

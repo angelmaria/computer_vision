@@ -3,15 +3,14 @@ import streamlit as st
 import cv2
 import numpy as np
 from pathlib import Path
-import torch
+import tempfile
 from detector import BrandDetector
 from utils.image_downloader import ImageCollector
-from train import BrandTrainingSetup
-import tempfile
+from train import BrandTrainer
 
 class BrandDetectionApp:
     def __init__(self):
-        self.project_dir = "Computer_Vision_F5"
+        self.project_dir = "computer_vision_f5"
         self.setup_page()
         self.initialize_session_state()
         
@@ -21,7 +20,7 @@ class BrandDetectionApp:
         
     def initialize_session_state(self):
         if 'detector' not in st.session_state:
-            model_path = Path(self.project_dir) / "models" / "best.pt"
+            model_path = Path(self.project_dir) / "data" / "models" / "best.pt"
             if model_path.exists():
                 st.session_state.detector = BrandDetector(str(model_path))
             else:
@@ -51,15 +50,15 @@ class BrandDetectionApp:
         
         with col1:
             if st.button("Setup Dataset Structure"):
-                setup = BrandTrainingSetup(self.project_dir)
-                setup.create_dataset_structure()
-                setup.create_data_yaml(['coca_cola'])
+                trainer = BrandTrainer(self.project_dir)
+                trainer.create_dataset_structure()
+                trainer.create_data_yaml(['coca_cola'])
                 st.success("Dataset structure created!")
                 
         with col2:
             if st.button("Split Dataset"):
-                setup = BrandTrainingSetup(self.project_dir)
-                setup.split_dataset()
+                trainer = BrandTrainer(self.project_dir)
+                trainer.split_dataset()
                 st.success("Dataset split into train/val/test sets!")
 
     def model_training_section(self):
@@ -72,9 +71,9 @@ class BrandDetectionApp:
             
         with col2:
             if st.button("Train Model"):
-                setup = BrandTrainingSetup(self.project_dir)
+                trainer = BrandTrainer(self.project_dir)
                 with st.spinner("Training model..."):
-                    setup.train_model(epochs=epochs, batch_size=batch_size)
+                    trainer.train_model(epochs=epochs, batch_size=batch_size)
                 st.success("Model training completed!")
 
     def inference_section(self):

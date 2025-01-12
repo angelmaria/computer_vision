@@ -1,4 +1,4 @@
-# brand_detector.py
+# detector.py
 import torch
 import cv2
 import numpy as np
@@ -10,39 +10,20 @@ from typing import Dict, List, Tuple
 import logging
 
 class BrandDetector:
-    def __init__(self, model_path: str = None):
-        """
-        Initialize the brand detector with a trained YOLO model
+    def __init__(self, project_dir: str = "Computer_Vision_F5"):
+        self.project_dir = Path(project_dir)
+        self.model_path = self.project_dir / "data" / "models" / "best.pt"
         
-        Args:
-            model_path: Path to trained YOLO model weights
-        """
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-        
-        # Initialize model
-        if model_path and Path(model_path).exists():
-            self.model = YOLO(model_path)
+        if self.model_path.exists():
+            self.model = YOLO(str(self.model_path))
         else:
-            self.logger.warning("No model path provided or file not found. Using pretrained model.")
-            self.model = YOLO('yolov8n.pt')
+            self.model = YOLO('yolov8n.pt')  # Fallback to pretrained
         
         self.class_names = self.model.names
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
     def process_image(self, image: np.ndarray, conf_threshold: float = 0.25) -> Tuple[np.ndarray, List[Dict]]:
-        """
-        Process a single image and return detections
-        
-        Args:
-            image: Input image as numpy array
-            conf_threshold: Confidence threshold for detections
-            
-        Returns:
-            Tuple containing:
-            - Annotated image
-            - List of detections with coordinates and confidence
-        """
+        """Process a single image and return detections"""
         results = self.model(image, conf=conf_threshold)[0]
         annotated_img = results.plot()
         
@@ -65,17 +46,7 @@ class BrandDetector:
         return annotated_img, detections
     
     def process_video(self, video_path: str, output_path: str = None, save_frames: bool = False) -> Dict:
-        """
-        Process a video file and return detection statistics
-        
-        Args:
-            video_path: Path to input video
-            output_path: Path to save processed video (optional)
-            save_frames: Whether to save frames with detections
-            
-        Returns:
-            Dictionary containing detection statistics
-        """
+        """Process a video file and return detection statistics"""
         cap = cv2.VideoCapture(video_path)
         fps = cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -135,15 +106,44 @@ class BrandDetector:
             
         return statistics
 
-    def save_detection_image(self, image: np.ndarray, detection: Dict, output_path: str):
-        """
-        Save a cropped detection image
+    def test_single_image(self, image_path: str, output_path: str = None):
+        """Test detection on a single image"""
+        image = cv2.imread(image_path)
+        if image is None:
+            raise ValueError(f"Could not read image at {image_path}")
         
-        Args:
-            image: Original image
-            detection: Detection dictionary with bbox coordinates
-            output_path: Path to save cropped image
-        """
-        x1, y1, x2, y2 = detection['bbox']
-        cropped = image[y1:y2, x1:x2]
-        cv2.imwrite(output_path, cropped)
+        annotated_image, detections = self.process_image(image)
+        
+        # Draw additional information
+        for detection in detections:
+            box = detection['bbox']
+            conf = detection['confidence']
+            label = f"{detection['class_name']} {conf:.2f}"
+            
+            text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)[0]
+            text_x = box[0]
+            text_y = box[3] + text_size[1] + 5
+            
+            cv2.putText(
+                annotated_image,
+                label,
+                (text_x, text_y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                2
+            )
+        
+        if output_path:
+            cv2.imwrite(output_path, annotated_image)
+            return detections
+        else:
+            cv2.imshow('Detection Result', annotated_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            return detections
+
+if __name__ == "__main__":
+    # Example usage
+    detector = BrandDetector("data/models/best.pt")
+    detector.test_single_image("path/to/test/image.jpg", "output.jpg")
