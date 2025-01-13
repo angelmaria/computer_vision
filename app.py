@@ -4,13 +4,14 @@ import cv2
 import numpy as np
 from pathlib import Path
 import tempfile
+import os
+import yaml
 from detector import BrandDetector
 from utils.image_downloader import ImageCollector
 from train import BrandTrainer
 
 class BrandDetectionApp:
     def __init__(self):
-        # Use the current directory (.) instead of creating a new one
         self.project_dir = "."
         self.setup_page()
         self.initialize_session_state()
@@ -21,15 +22,42 @@ class BrandDetectionApp:
         
     def initialize_session_state(self):
         if 'detector' not in st.session_state:
-            # Using resolved path to ensure correct model location
             model_path = Path(self.project_dir).resolve() / "data" / "models" / "best.pt"
             if model_path.exists():
                 st.session_state.detector = BrandDetector(self.project_dir)
             else:
                 st.session_state.detector = None
 
+    def get_dataset_statistics(self):
+        """Get statistics about the dataset"""
+        dataset_dir = Path(self.project_dir) / "data"
+        
+        stats = {
+            'total_images': 0,
+            'train_images': 0,
+            'val_images': 0,
+            'test_images': 0
+        }
+        
+        # Count images in each split
+        for split in ['train', 'val', 'test']:
+            split_dir = dataset_dir / "images" / split
+            if split_dir.exists():
+                image_count = len(list(split_dir.glob('*.jpg')) + list(split_dir.glob('*.png')))
+                stats[f'{split}_images'] = image_count
+                stats['total_images'] += image_count
+                
+        return stats
+
     def download_images_section(self):
         st.header("1. Data Collection")
+        st.write("""
+        1. Download images using the tool below
+        2. Head to [Roboflow](https://roboflow.com) to label your images
+        3. Export your dataset in YOLOv8 format
+        4. Place the exported dataset in the `data` directory
+        """)
+        
         col1, col2 = st.columns(2)
         
         with col1:
@@ -43,25 +71,47 @@ class BrandDetectionApp:
                         collector = ImageCollector(self.project_dir)
                         collector.download_images(search_query, limit=num_images)
                         st.success(f"Downloaded {num_images} images for '{search_query}'")
+                        st.info("Now upload these images to Roboflow for labeling!")
                 else:
                     st.error("Please enter a search query")
 
     def dataset_management_section(self):
         st.header("2. Dataset Management")
-        col1, col2 = st.columns(2)
         
-        with col1:
-            if st.button("Setup Dataset Structure"):
-                trainer = BrandTrainer(self.project_dir)
-                trainer.create_dataset_structure()
-                trainer.create_data_yaml(['coca_cola'])
-                st.success("Dataset structure created!")
-                
-        with col2:
-            if st.button("Split Dataset"):
-                trainer = BrandTrainer(self.project_dir)
-                trainer.split_dataset()
-                st.success("Dataset split into train/val/test sets!")
+        # Display Roboflow instructions
+        st.markdown("""
+        ### Roboflow Dataset Steps:
+        1. Create a new project in Roboflow
+        2. Upload your images
+        3. Label your images using Roboflow's annotation tool
+        4. Generate dataset splits (train/val/test)
+        5. Export in YOLOv8 format
+        6. Download and extract to your project's `data` directory
+        """)
+        
+        # Display dataset statistics
+        st.subheader("Current Dataset Statistics")
+        stats = self.get_dataset_statistics()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Total Images", stats['total_images'])
+        col2.metric("Training Images", stats['train_images'])
+        col3.metric("Validation Images", stats['val_images'])
+        col4.metric("Test Images", stats['test_images'])
+        
+        # Dataset validation
+        if st.button("Validate Dataset Structure"):
+            if stats['total_images'] == 0:
+                st.error("No images found. Please export your dataset from Roboflow first.")
+            else:
+                data_yaml = Path(self.project_dir) / "data" / "data.yaml"
+                if not data_yaml.exists():
+                    st.warning("data.yaml not found. Creating one...")
+                    trainer = BrandTrainer(self.project_dir)
+                    trainer.create_data_yaml(['coca_cola'])
+                    st.success("Created data.yaml file")
+                else:
+                    st.success("Dataset structure looks good!")
 
     def model_training_section(self):
         st.header("3. Model Training")
@@ -73,6 +123,10 @@ class BrandDetectionApp:
             
         with col2:
             if st.button("Train Model"):
+                if self.get_dataset_statistics()['total_images'] == 0:
+                    st.error("No dataset found. Please export from Roboflow first!")
+                    return
+                    
                 trainer = BrandTrainer(self.project_dir)
                 with st.spinner("Training model..."):
                     trainer.train_model(epochs=epochs, batch_size=batch_size)
@@ -116,7 +170,8 @@ class BrandDetectionApp:
     def run(self):
         st.sidebar.title("Navigation")
         page = st.sidebar.radio("Go to", 
-            ["Data Collection", "Dataset Management", "Model Training", "Logo Detection"])
+            ["Data Collection", "Dataset Management", 
+             "Model Training", "Logo Detection"])
         
         if page == "Data Collection":
             self.download_images_section()
