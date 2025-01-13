@@ -12,8 +12,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class BrandTrainer:
-    def __init__(self, project_dir: str = "Computer_Vision_F5"):
-        self.project_dir = Path(project_dir).absolute()
+    def __init__(self, project_dir: str = "."):  # Changed default to current directory
+        self.project_dir = Path(project_dir).resolve()  # Get absolute path
         self.data_dir = self.project_dir / "data"
         self.images_dir = self.data_dir / "images"
         self.labels_dir = self.data_dir / "labels"
@@ -22,7 +22,7 @@ class BrandTrainer:
         
         # Create all necessary directories
         for directory in [self.images_dir, self.labels_dir, 
-                        self.models_dir, self.config_dir]:
+                         self.models_dir, self.config_dir]:
             directory.mkdir(parents=True, exist_ok=True)
         
     def create_dataset_structure(self):
@@ -115,8 +115,8 @@ class BrandTrainer:
 
 def main():
     parser = argparse.ArgumentParser(description='Brand Detection Training')
-    parser.add_argument('--project-dir', type=str, default='computer_vision_f5',
-                        help='Project directory name')
+    parser.add_argument('--project-dir', type=str, default='.',  # Changed default to current directory
+                        help='Project directory path')
     parser.add_argument('--brands', nargs='+', default=['coca_cola'],
                         help='List of brand names to detect')
     parser.add_argument('--epochs', type=int, default=100,

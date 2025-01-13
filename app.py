@@ -10,7 +10,8 @@ from train import BrandTrainer
 
 class BrandDetectionApp:
     def __init__(self):
-        self.project_dir = "computer_vision_f5"
+        # Use the current directory (.) instead of creating a new one
+        self.project_dir = "."
         self.setup_page()
         self.initialize_session_state()
         
@@ -20,9 +21,10 @@ class BrandDetectionApp:
         
     def initialize_session_state(self):
         if 'detector' not in st.session_state:
-            model_path = Path(self.project_dir) / "data" / "models" / "best.pt"
+            # Using resolved path to ensure correct model location
+            model_path = Path(self.project_dir).resolve() / "data" / "models" / "best.pt"
             if model_path.exists():
-                st.session_state.detector = BrandDetector(str(model_path))
+                st.session_state.detector = BrandDetector(self.project_dir)
             else:
                 st.session_state.detector = None
 

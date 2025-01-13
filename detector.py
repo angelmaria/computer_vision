@@ -10,8 +10,8 @@ from typing import Dict, List, Tuple
 import logging
 
 class BrandDetector:
-    def __init__(self, project_dir: str = "Computer_Vision_F5"):
-        self.project_dir = Path(project_dir)
+    def __init__(self, project_dir: str = "."):  # Changed default to current directory
+        self.project_dir = Path(project_dir).resolve()  # Get absolute path
         self.model_path = self.project_dir / "data" / "models" / "best.pt"
         
         if self.model_path.exists():
