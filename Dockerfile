@@ -8,14 +8,6 @@ RUN apt-get update && apt-get install -y \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    libgstreamer1.0-0 \
-    libgstreamer-plugins-base1.0-0 \
-    libavcodec-dev \
-    libavformat-dev \
-    libswscale-dev \
-    libgtk-3-0 \
-    libtbb2 \
-    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory

@@ -1,11 +1,9 @@
+# docker-compose.yml
 version: '3.8'
 
 services:
   logo-detection:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    platform: linux/amd64  # Specify platform for Intel Mac
+    build: .
     ports:
       - "8501:8501"
     volumes:
@@ -16,7 +14,4 @@ services:
       - DB_PATH=/app/detections.db
       - SAVE_DIR=/app/data/detections
       - MODEL_PATH=/app/data/models/model.pth
-      - PYTORCH_CPU_ONLY=1
     restart: unless-stopped
-    mem_limit: 4g  # Set memory limit
-    memswap_limit: 6g  # Set swap limit
