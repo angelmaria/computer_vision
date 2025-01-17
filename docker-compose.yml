@@ -1,0 +1,17 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  logo-detection:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data/detections:/app/data/detections
+      - ./data/models:/app/data/models
+      - ./detections.db:/app/detections.db
+    environment:
+      - DB_PATH=/app/detections.db
+      - SAVE_DIR=/app/data/detections
+      - MODEL_PATH=/app/data/models/model.pth
+    restart: unless-stopped

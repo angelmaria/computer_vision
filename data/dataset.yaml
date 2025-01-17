@@ -1,0 +1,7 @@
+path: /Users/cash/Desktop/F5/Python/Computer_Vision_F5/computer_vision_G2/data
+train: /Users/cash/Desktop/F5/Python/Computer_Vision_F5/computer_vision_G2/data/train/images
+val: /Users/cash/Desktop/F5/Python/Computer_Vision_F5/computer_vision_G2/data/valid/images
+test: /Users/cash/Desktop/F5/Python/Computer_Vision_F5/computer_vision_G2/data/test/images
+names:
+  0: nike_logo
+nc: 1
