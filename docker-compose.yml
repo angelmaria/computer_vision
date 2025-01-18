@@ -14,4 +14,10 @@ services:
       - DB_PATH=/app/detections.db
       - SAVE_DIR=/app/data/detections
       - MODEL_PATH=/app/data/models/model.pth
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G
     restart: unless-stopped
