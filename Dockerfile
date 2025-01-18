@@ -1,5 +1,5 @@
 # Use a more complete base image
-FROM python:3.10
+FROM python:3.10-slim
 
 # Install basic dependencies
 RUN apt-get update && apt-get install -y \
@@ -14,8 +14,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install dependencies in specific order
-RUN pip install --no-cache-dir opencv-python-headless==4.8.1.78 && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application
 COPY . .

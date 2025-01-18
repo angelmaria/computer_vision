@@ -2,7 +2,7 @@
 torch==2.0.1
 torchvision==0.15.2
 ultralytics==8.0.228
-# opencv-python-headless==4.8.1.78
+opencv-python-headless
 ultralytics-thop==2.0.13
 
 # Web Framework and UI
