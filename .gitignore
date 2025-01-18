@@ -171,6 +171,6 @@ vector_cache/
 model_cache/
 offload/
 *.sqlite3
-# *.pt
+*.pt
 *.bin
 *.json
