@@ -7,13 +7,11 @@ services:
     ports:
       - "8501:8501"
     volumes:
-      - ./data/detections:/app/data/detections
-      - ./data/models:/app/data/models
+      - ./data:/app/data  # Mount entire data directory
       - ./detections.db:/app/detections.db
     environment:
       - DB_PATH=/app/detections.db
-      - SAVE_DIR=/app/data/detections
-      - MODEL_PATH=/app/data/models/model.pth
+      - MODEL_PATH=/app/data/models/best.pt
     deploy:
       resources:
         limits:

@@ -4,9 +4,16 @@ import torch
 
 # Project paths
 PROJECT_ROOT = Path(__file__).parent.parent
-RUNS_DIR = PROJECT_ROOT / 'runs'
-MODEL_PATH = RUNS_DIR / 'detect' / 'train7' / 'best.pt'
-PRETRAINED_MODEL = 'yolov8n.pt'  # Used if no trained model exists
+DATA_DIR = PROJECT_ROOT / 'data'
+
+# Data subdirectories
+MODELS_DIR = DATA_DIR / 'models'
+DETECTIONS_DIR = DATA_DIR / 'detections'
+DATASET_DIR = DATA_DIR  # Contains test, train, valid folders
+
+# Model paths
+MODEL_PATH = MODELS_DIR / 'best.pt'
+PRETRAINED_MODEL = 'yolov8n.pt' # Used if no trained model exists
 
 # Brand configuration
 BRAND_CLASSES = ['nike', 'adidas', 'puma']
@@ -14,15 +21,14 @@ NUM_CLASSES = len(BRAND_CLASSES) + 1  # +1 for background class
 
 # Detection configuration
 CONFIDENCE_THRESHOLD = 0.25
-SAVE_DIR = PROJECT_ROOT / 'detected_images'
 DB_PATH = PROJECT_ROOT / 'detections.db'
 
 # Training configuration
-DATA_PATH = PROJECT_ROOT / 'data'
-YAML_PATH = DATA_PATH / 'dataset.yaml'
+YAML_PATH = DATASET_DIR / 'dataset.yaml'
 
 def get_model_path():
     """Get the appropriate model path based on what's available"""
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)  # Create directory if it doesn't exist
     if MODEL_PATH.exists():
         return MODEL_PATH
     return PRETRAINED_MODEL

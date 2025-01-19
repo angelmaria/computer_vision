@@ -1,3 +1,4 @@
+# src/inference/video_processor.py
 from ultralytics import YOLO
 import cv2
 import numpy as np

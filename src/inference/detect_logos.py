@@ -4,6 +4,7 @@ import torch
 import logging
 from config import get_model_path, PRETRAINED_MODEL
 import streamlit as st
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -22,18 +23,25 @@ class LogoDetector:
             custom_model_path: Optional path to custom trained model
         """
         try:
-            # Try loading custom model first
             if custom_model_path:
+                logger.info(f"Attempting to load custom model from: {custom_model_path}")
+                if not Path(custom_model_path).exists():
+                    logger.error(f"Custom model path does not exist: {custom_model_path}")
+                    raise FileNotFoundError(f"Custom model not found at {custom_model_path}")
                 self.model = YOLO(custom_model_path)
-                logger.info(f"Loaded custom model from: {custom_model_path}")
+                logger.info(f"Successfully loaded custom model from: {custom_model_path}")
             else:
-                # Try getting default trained model
                 model_path = get_model_path()
+                logger.info(f"Attempting to load default model from: {model_path}")
+                if not Path(model_path).exists():
+                    logger.error(f"Default model path does not exist: {model_path}")
+                    raise FileNotFoundError(f"Default model not found at {model_path}")
                 self.model = YOLO(model_path)
-                logger.info(f"Loaded model from: {model_path}")
+                logger.info(f"Successfully loaded default model from: {model_path}")
                 
         except Exception as e:
-            logger.warning(f"Could not load custom model: {e}. Loading pretrained model.")
+            logger.error(f"Error loading custom/default model: {str(e)}")
+            logger.warning("Falling back to pretrained model")
             self.model = YOLO(PRETRAINED_MODEL)
         
         # Set device

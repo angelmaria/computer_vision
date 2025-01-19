@@ -1,3 +1,4 @@
+# src/streamlit_app.py
 import streamlit as st
 from pathlib import Path
 import logging
@@ -105,7 +106,7 @@ def add_database_management():
                             cursor.execute("VACUUM")
                         
                         # Delete saved images
-                        save_dir = Path(SAVE_DIR)
+                        save_dir = Path(DETECTIONS_DIR)
                         if save_dir.exists():
                             for file in save_dir.glob("*"):
                                 try:
@@ -154,7 +155,7 @@ def add_database_management():
                         # Delete associated files
                         for video_id in old_video_ids:
                             file_pattern = f"{video_id}_*"
-                            for file in Path(SAVE_DIR).glob(file_pattern):
+                            for file in Path(DETECTIONS_DIR).glob(file_pattern):
                                 try:
                                     file.unlink()
                                 except Exception as e:
@@ -166,11 +167,20 @@ def add_database_management():
                 except Exception as e:
                     st.error(f"Error clearing old data: {e}")
                     logger.error(f"Database clearing error: {e}", exc_info=True)
+                    
+@st.cache_resource
+def get_active_model_path():
+    model_path = get_model_path()
+    return str(model_path)
 
 def main():
     st.set_page_config(page_title="Logo Detection System", layout="wide")
     
     st.title("Logo Detection System")
+    
+    # Display active model path
+    active_model = get_active_model_path()
+    st.info(f"Active Model: {active_model}")
     
     # Sidebar for mode selection and confidence threshold
     mode = st.sidebar.selectbox(
@@ -190,7 +200,7 @@ def main():
     
     if mode == "Detection":
         # Initialize components
-        storage = DetectionStorage(DB_PATH, SAVE_DIR)
+        storage = DetectionStorage(DB_PATH, DETECTIONS_DIR) 
         
         @st.cache_resource
         def load_detector():
@@ -198,7 +208,7 @@ def main():
         
         try:
             detector = load_detector()
-            processor = VideoProcessor(detector.model, storage, SAVE_DIR)
+            processor = VideoProcessor(detector.model, storage, DETECTIONS_DIR)
         except Exception as e:
             st.error(f"Error initializing system: {str(e)}")
             return
