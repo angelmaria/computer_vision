@@ -30,8 +30,11 @@ YAML_PATH = DATASET_DIR / 'dataset.yaml'
 def get_model_path():
     """Get the appropriate model path based on what's available"""
     MODELS_DIR.mkdir(parents=True, exist_ok=True)  # Create directory if it doesn't exist
+    print(f"Checking for model at: {MODEL_PATH}")  # This prints the full path of the model
     if MODEL_PATH.exists():
+        print(f"Found model at {MODEL_PATH}")
         return MODEL_PATH
+    print(f"Using pretrained model: {PRETRAINED_MODEL}")
     return PRETRAINED_MODEL
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
