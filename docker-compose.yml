@@ -1,4 +1,3 @@
-# docker-compose.yml
 version: '3.8'
 
 services:
@@ -8,10 +7,14 @@ services:
       - "8501:8501"
     volumes:
       - ./data:/app/data  # Mount entire data directory
+      - ./data/models:/app/data/models  # Explicitly mount models directory
       - ./detections.db:/app/detections.db
     environment:
-      - DB_PATH=/app/detections.db
+      - PROJECT_ROOT=/app
+      - DATA_DIR=/app/data
+      - MODELS_DIR=/app/data/models
       - MODEL_PATH=/app/data/models/best.pt
+      - DB_PATH=/app/detections.db
     deploy:
       resources:
         limits:

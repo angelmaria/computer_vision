@@ -1,18 +1,19 @@
 # src/config.py
 from pathlib import Path
 import torch
+import os
 
-# Project paths
-PROJECT_ROOT = Path(__file__).parent.parent
-DATA_DIR = PROJECT_ROOT / 'data'
+# Project paths - respect environment variables if set
+PROJECT_ROOT = Path(os.getenv('PROJECT_ROOT', Path(__file__).parent.parent))
+DATA_DIR = Path(os.getenv('DATA_DIR', PROJECT_ROOT / 'data'))
+MODELS_DIR = Path(os.getenv('MODELS_DIR', DATA_DIR / 'models'))
+MODEL_PATH = Path(os.getenv('MODEL_PATH', MODELS_DIR / 'best.pt'))  # Define only once
 
 # Data subdirectories
-MODELS_DIR = DATA_DIR / 'models'
 DETECTIONS_DIR = DATA_DIR / 'detections'
 DATASET_DIR = DATA_DIR  # Contains test, train, valid folders
 
-# Model paths
-MODEL_PATH = MODELS_DIR / 'best.pt'
+# Model configuration
 PRETRAINED_MODEL = 'yolov8n.pt' # Used if no trained model exists
 
 # Brand configuration
@@ -21,7 +22,7 @@ NUM_CLASSES = len(BRAND_CLASSES) + 1  # +1 for background class
 
 # Detection configuration
 CONFIDENCE_THRESHOLD = 0.25
-DB_PATH = PROJECT_ROOT / 'detections.db'
+DB_PATH = Path(os.getenv('DB_PATH', PROJECT_ROOT / 'detections.db'))
 
 # Training configuration
 YAML_PATH = DATASET_DIR / 'dataset.yaml'
