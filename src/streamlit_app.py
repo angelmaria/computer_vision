@@ -65,7 +65,7 @@ def process_image(image, detector, confidence_threshold):
 def process_detection(detector, processor, confidence_threshold, detection_type):
     """Handle detection processing for both image and video"""
     upload_label = f"Choose a {detection_type.lower()} file"
-    allowed_types = ['jpg', 'jpeg', 'png'] if detection_type == "Image" else ['mp4', 'avi', 'mov']
+    allowed_types = ['jpg', 'jpeg', 'png', 'webp'] if detection_type == "Image" else ['mp4', 'avi', 'mov']
     
     st.markdown("""
         <style>
