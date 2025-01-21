@@ -108,15 +108,47 @@ class DetectionStorage:
 
     def get_video_statistics(self, video_filename):
         """Get statistics for a processed video"""
-        with sqlite3.connect(self.db_path) as conn:
-            conn.row_factory = sqlite3.Row
-            cursor = conn.execute('''
-                SELECT v.*, 
-                       COUNT(d.id) as total_detections,
-                       AVG(d.confidence) as avg_confidence
-                FROM videos v
-                LEFT JOIN detections d ON v.id = d.video_id
-                WHERE v.filename = ?
-                GROUP BY v.id
-            ''', (video_filename,))
-            return dict(cursor.fetchone())
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.execute('''
+                    SELECT v.*, 
+                        COUNT(d.id) as total_detections,
+                        AVG(d.confidence) as avg_confidence,
+                        COUNT(DISTINCT d.timestamp) as frames_with_logos
+                    FROM videos v
+                    LEFT JOIN detections d ON v.id = d.video_id
+                    WHERE v.filename = ?
+                    GROUP BY v.id
+                ''', (video_filename,))
+                
+                result = cursor.fetchone()
+                if result is None:
+                    logger.warning(f"No statistics found for video: {video_filename}")
+                    return None
+                    
+                stats = dict(result)
+                
+                # Get all detections for this video
+                cursor = conn.execute('''
+                    SELECT d.timestamp, d.class_name, d.confidence
+                    FROM detections d
+                    JOIN videos v ON v.id = d.video_id
+                    WHERE v.filename = ?
+                    ORDER BY d.timestamp
+                ''', (video_filename,))
+                
+                stats['detections'] = [
+                    {
+                        'timestamp': row[0],
+                        'class_name': row[1],
+                        'confidence': row[2]
+                    }
+                    for row in cursor.fetchall()
+                ]
+                
+                return stats
+                
+        except Exception as e:
+            logger.error(f"Error retrieving video statistics: {str(e)}")
+            return None

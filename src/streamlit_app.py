@@ -102,12 +102,12 @@ def process_image_detection(uploaded_file, detector, confidence_threshold):
     
     with col1:
         st.subheader("Original Image")
-        st.image(image, use_column_width=True)
+        st.image(image, use_container_width =True)
     
     with col2:
         st.subheader("Detected Logos")
         processed_image, detections = process_image(image, detector, confidence_threshold)
-        st.image(processed_image, use_column_width=True)
+        st.image(processed_image, use_container_width =True)
     
     if detections:
         st.markdown("### Detection Results")
@@ -118,34 +118,80 @@ def process_image_detection(uploaded_file, detector, confidence_threshold):
 
 def process_video_detection(uploaded_file, processor, confidence_threshold):
     """Handle video detection processing"""
+    # Add this at the beginning of the function
+    if uploaded_file is None:
+        st.session_state.processed_videos = set()
+        st.session_state.current_stats = None
+        return
+    if not hasattr(st.session_state, 'processed_videos'):
+        st.session_state.processed_videos = set()
+    
+    if not hasattr(st.session_state, 'current_stats'):
+        st.session_state.current_stats = None
+    
+    video_key = f"{uploaded_file.name}_{uploaded_file.size}"
+    
     progress_bar = st.progress(0)
     video_placeholder = st.empty()
     
-    def update_progress(frame_idx, total_frames):
-        progress = int((frame_idx / total_frames) * 100)
-        progress_bar.progress(progress)
-    
-    with st.spinner("Processing video..."):
-        stats = processor.process_video(
-            uploaded_file,
-            confidence_threshold=confidence_threshold,
-            display_callback=video_placeholder.image,
-            progress_callback=update_progress
-        )
+    try:
+        # If data was just deleted, force reprocessing
+        if hasattr(st.session_state, 'data_just_deleted') and st.session_state.data_just_deleted:
+            st.session_state.processed_videos.clear()
+            st.session_state.current_stats = None
+            st.session_state.data_just_deleted = False
+        
+        # Check if we need to process the video
+        if video_key not in st.session_state.processed_videos:
+            with st.spinner("Processing video..."):
+                stats = processor.process_video(
+                    uploaded_file,
+                    confidence_threshold=confidence_threshold,
+                    display_callback=video_placeholder.image,
+                    progress_callback=lambda frame_idx, total_frames: progress_bar.progress(int((frame_idx / total_frames) * 100))
+                )
+                if stats:
+                    st.session_state.processed_videos.add(video_key)
+                    st.session_state.current_stats = stats
+        else:
+            # Try to get existing stats
+            stats = processor.get_statistics(uploaded_file)
+            if stats is None and st.session_state.current_stats:
+                stats = st.session_state.current_stats
+            elif stats is None:
+                st.session_state.processed_videos.remove(video_key)
+                return process_video_detection(uploaded_file, processor, confidence_threshold)
         
         progress_bar.empty()
-        st.success("Video processing complete!")
         
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Video Duration", format_time(stats['duration']))
-        with col2:
-            st.metric("Frames with Logos", f"{stats['frames_with_logos']}/{stats['total_frames']}")
-        with col3:
-            st.metric("Logo Presence", f"{stats['logo_percentage']:.1f}%")
-        
-        if stats['detections']:
-            show_detection_analytics(stats)
+        if stats and isinstance(stats, dict) and all(key in stats for key in ['duration', 'total_frames', 'frames_with_logos', 'logo_percentage']):
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                duration = stats.get('duration')
+                if duration is not None:
+                    st.metric("Video Duration", format_time(duration))
+            with col2:
+                frames = stats.get('total_frames')
+                frames_with_logos = stats.get('frames_with_logos')
+                if frames is not None and frames_with_logos is not None:
+                    st.metric("Frames with Logos", f"{frames_with_logos}/{frames}")
+            with col3:
+                logo_percentage = stats.get('logo_percentage')
+                if logo_percentage is not None:
+                    st.metric("Logo Presence", f"{logo_percentage:.1f}%")
+            
+            if stats.get('detections'):
+                show_detection_analytics(stats)
+        else:
+            st.warning("No valid statistics available for this video. Please try processing it again.")
+            if video_key in st.session_state.processed_videos:
+                st.session_state.processed_videos.remove(video_key)
+                
+    except Exception as e:
+        logger.error(f"Video processing error: {str(e)}", exc_info=True)
+        if video_key in st.session_state.processed_videos:
+            st.session_state.processed_videos.remove(video_key)
+        st.error("Error processing video. Please try again.")
 
 def show_detection_analytics(stats):
     """Display detection analytics"""
@@ -236,6 +282,15 @@ def add_database_management():
                                 file.unlink()
                             except Exception as e:
                                 logger.error(f"Error deleting file {file}: {e}")
+                    
+                    # Set flag to indicate data was just deleted
+                    st.session_state.data_just_deleted = True
+                    
+                    # Clear processed videos and current stats
+                    if hasattr(st.session_state, 'processed_videos'):
+                        st.session_state.processed_videos.clear()
+                    if hasattr(st.session_state, 'current_stats'):
+                        st.session_state.current_stats = None
                     
                     st.success("Successfully deleted all data!")
                     time.sleep(1)
