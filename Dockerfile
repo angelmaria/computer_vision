@@ -30,9 +30,6 @@ COPY . .
 RUN mkdir -p /app/data/detections /app/data/models && \
     chmod -R 777 /app/data
 
-# Copy the model file if it exists locally
-COPY data/models/best.pt* /app/data/models/
-
 # Expose Streamlit port
 EXPOSE 8501
 
