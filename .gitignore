@@ -174,4 +174,5 @@ offload/
 *.pt
 *.bin
 *.json
+detections/
 detections.db
